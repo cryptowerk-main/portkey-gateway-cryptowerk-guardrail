@@ -96,7 +96,7 @@ export const handler: PluginHandler = async (
         retrievalId: retrievalId,
       };
     }
-  } catch (e) {
+  } catch (e: any) {
     let msg;
     if (e instanceof Error) msg = e.message;
     else msg = e.toString();

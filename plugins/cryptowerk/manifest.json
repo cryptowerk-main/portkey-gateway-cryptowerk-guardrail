@@ -8,14 +8,12 @@
         "type": "string",
         "label": "API Key",
         "description": "Your Cryptowerk API key",
-        "required": true,
         "encrypted": true
       },
       "apiCredential": {
         "type": "string",
         "label": "API Credential",
         "description": "Your Cryptowerk API credential",
-        "required": true,
         "encrypted": true
       }
     },
