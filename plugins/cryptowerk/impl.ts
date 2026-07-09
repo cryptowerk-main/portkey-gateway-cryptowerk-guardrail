@@ -72,13 +72,20 @@ export class APIAccess {
         resp.on('end', () => {
           let result = JSON.parse(responseData);
           //console.log(result);
-          resolve(result);
+          if (result.error)
+            reject(
+              'API request rejected by server ' +
+                apiServer +
+                ' : ' +
+                result.error
+            );
+          else resolve(result);
         });
       });
 
       req.on('error', (err) => {
         let errMsg = 'Error: ' + err.message + ' stack: ' + err.stack;
-        console.log(errMsg);
+        //console.log(errMsg);
         reject(errMsg);
       });
 
@@ -94,11 +101,12 @@ export class APIAccess {
       .createHash('sha256')
       .update(doc)
       .digest('hex');
-    return this.apiRequest('register', { hashes: docHash }).then(
-      (apiResult: APIResponse) => {
-        return { docHash: docHash, apiResult: apiResult as RegisterResponse };
-      }
-    );
+    return this.apiRequest('register', {
+      hashes: docHash,
+      publiclyRetrievable: true,
+    }).then((apiResult: APIResponse) => {
+      return { docHash: docHash, apiResult: apiResult as RegisterResponse };
+    });
   }
 
   async getSeal(retrievalId: string): Promise<GetSealResponse> {

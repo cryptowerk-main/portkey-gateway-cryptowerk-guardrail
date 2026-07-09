@@ -21,72 +21,92 @@ export const handler: PluginHandler = async (
   // - eventType to determine which hook is being executed
 
   //console.log('CW PluginHandler called.');
-  let error = null;
-  let logMsg = '';
+  let errors = [];
+  let logMsg = [];
   let data = null;
 
-  let api;
-  if (
-    context.credentials &&
-    context.credentials.apiKey &&
-    context.credentials.apiCredential
-  )
-    api = new APIAccess(
-      context.credentials.apiKey,
+  try {
+    let api;
+    if (
+      context.credentials &&
+      context.credentials.apiKey &&
       context.credentials.apiCredential
-    );
-  else if (
-    parameters &&
-    parameters.credentials &&
-    parameters.credentials.apiKey &&
-    parameters.credentials.apiCredential
-  )
-    api = new APIAccess(
-      parameters.credentials.apiKey,
+    ) {
+      api = new APIAccess(
+        context.credentials.apiKey,
+        context.credentials.apiCredential
+      );
+    } else if (
+      parameters &&
+      parameters.credentials &&
+      parameters.credentials.apiKey &&
       parameters.credentials.apiCredential
-    );
-  else
-    throw new Error(
-      'Missing API key and/or credential (e.g. from before/afterRequestHooks/checks/parameters).'
-    );
+    ) {
+      api = new APIAccess(
+        parameters.credentials.apiKey,
+        parameters.credentials.apiCredential
+      );
+    } else {
+      api = new APIAccess(
+        // fallback credentials for ease-of-use, don't rely on them, they might expire any time
+        'SlR2+djTs+ydFNGiSs9oPAfV8RYJzkOqLgCD3HtZCsU=',
+        '+9uJ4f2hzpDsXCT1/19KToX8vBGmFvOZRyySd0fxbZs='
+      );
+      logMsg.push(
+        'Warning: Missing API key and/or credential (e.g. from before/afterRequestHooks/checks/parameters). Using fallback credentials that may expire any time.'
+      );
+      //throw new Error(...)
+    }
 
-  let docToSealJson = {
-    eventType: eventType,
-    request: context.request.json,
-    response:
-      context.response && context.response.json ? context.response.json : null,
-  };
-  let docToSealText = JSON.stringify(docToSealJson);
-  let docToSealBin = Buffer.from(docToSealText);
-  let docToSeal64 = docToSealBin.toString('base64');
-  let response = await api.register(docToSealBin);
-  if (!('apiResult' in response))
-    error =
-      'Missing API result. Possibly the connection to the API server failed.';
-  else if (!('documents' in response.apiResult))
-    error = 'Missing documents in API result.';
-  else {
-    let retrievalId = response.apiResult.documents[0].retrievalId;
-    let docHash = response.docHash;
-    logMsg +=
-      'Sealed text=' +
-      docToSealText /*+" base64="+docToSeal64*/ +
-      ' docHash=' +
-      docHash +
-      ' retrievalId=' +
-      retrievalId;
-    data = {
-      // any additional data you want to return
-      sealedData: docToSealText,
-      sealedDataBase64: docToSeal64,
-      docHash: docHash,
-      retrievalId: retrievalId,
+    let docToSealJson = {
+      eventType: eventType,
+      request: context.request.json,
+      response:
+        context.response && context.response.json
+          ? context.response.json
+          : null,
     };
+    let docToSealText = JSON.stringify(docToSealJson);
+    let docToSealBin = Buffer.from(docToSealText);
+    let docToSeal64 = docToSealBin.toString('base64');
+    let response = await api.register(docToSealBin);
+    if (!('apiResult' in response))
+      errors.push(
+        'Missing API result. Possibly the connection to the API server failed.'
+      );
+    else if (!('documents' in response.apiResult))
+      errors.push('Missing documents in API result.');
+    else {
+      let retrievalId = response.apiResult.documents[0].retrievalId;
+      let docHash = response.docHash;
+      logMsg.push(
+        //'Sealed text=' + docToSealText /*+" base64="+docToSeal64*/ +
+        'Proof created: docHash=' +
+          docHash +
+          ' retrievalId=' +
+          retrievalId +
+          ' verifiable at https://developers.cryptowerk.com/platform/permalink/sealapiverify?retrievalId=' +
+          retrievalId
+      );
+      data = {
+        // any additional data you want to return
+        sealedData: docToSealText,
+        sealedDataBase64: docToSeal64,
+        docHash: docHash,
+        retrievalId: retrievalId,
+      };
+    }
+  } catch (e) {
+    let msg;
+    if (e instanceof Error) msg = e.message;
+    else msg = e.toString();
+    errors.push(msg);
   }
+  const error = errors.length > 0 ? new Error(errors.join(' ')) : null;
   return {
     error: error, // or error object if an error occurred
-    verdict: true, // or false to indicate if the guardrail passed or failed
+    verdict: errors.length == 0, // indicate if the guardrail passed or failed
     data: data,
-    log: logMsg,
+    log: logMsg.join(' '),
   };
 };
