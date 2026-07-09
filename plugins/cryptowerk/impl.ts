@@ -3,6 +3,7 @@ import crypto from 'crypto';
 interface APIResponse {
   minSupportedAPIVersion: number;
   maxSupportedAPIVersion: number;
+  error?: string;
 }
 
 interface RegisterResponse extends APIResponse {
@@ -48,34 +49,28 @@ export class APIAccess {
         headers: {
           'X-ApiKey': this.apiKey + ' ' + this.apiCredential,
           'Content-Type': 'application/json', //"application/x-www-form-urlencoded"
-          'Content-Length': Buffer.byteLength(postData),
+          'Content-Length': String(Buffer.byteLength(postData)),
         },
         body: postData,
       })
         .then((response: Response) => {
-          if (response.ok && response.status == 200) {
-            response
-              .json()
-              .then((json) => {
+          let success: boolean = response.ok && response.status == 200;
+          response
+            .text() // .json()
+            .then((jsonText) => {
+              let json: APIResponse = JSON.parse(jsonText);
+              if (success) {
                 resolve(json);
-              })
-              .catch((e) => {
-                reject('Cannot parse JSON response: ' + e.toString());
-              });
-          } else {
-            let msg = 'Error: status=' + response.status;
-            if (response.statusText) msg += ' ' + response.statusText;
-            response
-              .json()
-              .then((json) => {
+              } else {
+                let msg = 'status=' + response.status;
+                if (response.statusText) msg += ' ' + response.statusText;
                 if (json.error) msg += ", server says '" + json.error + "'";
                 reject(msg);
-              })
-              .catch((e) => {
-                msg += ' ' + e.toString();
-                reject(msg);
-              });
-          }
+              }
+            })
+            .catch((e) => {
+              reject('Cannot retrieve JSON response: ' + e.toString());
+            });
         })
         .catch((e) => {
           reject(e.toString());
