@@ -48,12 +48,13 @@ export const handler: PluginHandler = async (
       );
     } else {
       api = new APIAccess(
-        // fallback credentials for ease-of-use, don't rely on them, they might expire any time
+        // Those are fallback credentials for ease-of-use meant to get started quickly. They might be revoked if being abused.
+        // This is committed to git intentionally.
         'SlR2+djTs+ydFNGiSs9oPAfV8RYJzkOqLgCD3HtZCsU=',
         '+9uJ4f2hzpDsXCT1/19KToX8vBGmFvOZRyySd0fxbZs='
       );
       logMsg.push(
-        'Warning: Missing API key and/or credential (e.g. from before/afterRequestHooks/checks/parameters). Using fallback credentials that may expire any time.'
+        'Warning: Please provide your own API key and/or credential (e.g. from before/afterRequestHooks/checks/parameters). For now using fallback credentials that may expire any time.'
       );
       //throw new Error(...)
     }

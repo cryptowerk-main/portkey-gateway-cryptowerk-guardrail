@@ -3,13 +3,6 @@ import crypto from 'crypto';
 //const http=require("http");
 import * as https from 'node:https';
 
-/*
-export type JSON_t =
-    | string | number | boolean | null
-    | JSON_t[]
-    | { [k: string]: JSON_t };
-*/
-
 interface APIResponse {
   minSupportedAPIVersion: number;
   maxSupportedAPIVersion: number;
@@ -115,11 +108,3 @@ export class APIAccess {
     }) as Promise<GetSealResponse>;
   }
 }
-
-/*
-function test() {
-  const doc:Buffer=Buffer.from("Hello, world.");
-  register(doc);
-}
-//test();
-*/
