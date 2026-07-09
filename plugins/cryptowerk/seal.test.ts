@@ -3,7 +3,7 @@ import { HookEventType, PluginContext, PluginParameters } from '../types';
 import { APIAccess } from './impl';
 
 describe('Cryptowerk Plugin', () => {
-  const apiKey = 'K3MiuGZCcDsmYp6io/tBuX6VabGK3O3SVMe8mZlQF68='; // test credentials;
+  const apiKey = 'K3MiuGZCcDsmYp6io/tBuX6VabGK3O3SVMe8mZlQF68='; // test credentials, committing them to git is intentional
   const apiCredential = 'idp3RCub/9zQVggIAMxeMxDtLZ09SogdTFHXrGAx084=';
 
   it('should create a proof', async () => {

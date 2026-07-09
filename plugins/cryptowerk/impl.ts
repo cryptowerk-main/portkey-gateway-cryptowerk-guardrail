@@ -1,8 +1,5 @@
 import crypto from 'crypto';
 
-//const http=require("http");
-import * as https from 'node:https';
-
 interface APIResponse {
   minSupportedAPIVersion: number;
   maxSupportedAPIVersion: number;
@@ -42,48 +39,47 @@ export class APIAccess {
     callName: string,
     reqParams: object
   ): Promise<APIResponse> {
-    const apiServer = 'developers.cryptowerk.com'; // 'localhost'
-    const apiPort = 443; // 8443
     const postData: string = JSON.stringify(reqParams);
-    const options = {
-      hostname: apiServer,
-      port: apiPort,
-      path: '/platform/API/v8/' + callName,
-      method: 'POST',
-      headers: {
-        'X-ApiKey': this.apiKey + ' ' + this.apiCredential,
-        'Content-Type': 'application/json', //"application/x-www-form-urlencoded"
-        'Content-Length': Buffer.byteLength(postData),
-      },
-    };
     return new Promise((resolve, reject) => {
-      const req = https.request(options, (resp) => {
-        let responseData = '';
-        resp.on('data', (chunk) => {
-          responseData += chunk;
+      const apiUrl =
+        'https://developers.cryptowerk.com/platform/API/v8/' + callName;
+      fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'X-ApiKey': this.apiKey + ' ' + this.apiCredential,
+          'Content-Type': 'application/json', //"application/x-www-form-urlencoded"
+          'Content-Length': Buffer.byteLength(postData),
+        },
+        body: postData,
+      })
+        .then((response: Response) => {
+          if (response.ok && response.status == 200) {
+            response
+              .json()
+              .then((json) => {
+                resolve(json);
+              })
+              .catch((e) => {
+                reject('Cannot parse JSON response: ' + e.toString());
+              });
+          } else {
+            let msg = 'Error: status=' + response.status;
+            if (response.statusText) msg += ' ' + response.statusText;
+            response
+              .json()
+              .then((json) => {
+                if (json.error) msg += ", server says '" + json.error + "'";
+                reject(msg);
+              })
+              .catch((e) => {
+                msg += ' ' + e.toString();
+                reject(msg);
+              });
+          }
+        })
+        .catch((e) => {
+          reject(e.toString());
         });
-        resp.on('end', () => {
-          let result = JSON.parse(responseData);
-          //console.log(result);
-          if (result.error)
-            reject(
-              'API request rejected by server ' +
-                apiServer +
-                ' : ' +
-                result.error
-            );
-          else resolve(result);
-        });
-      });
-
-      req.on('error', (err) => {
-        let errMsg = 'Error: ' + err.message + ' stack: ' + err.stack;
-        //console.log(errMsg);
-        reject(errMsg);
-      });
-
-      req.write(postData);
-      req.end();
     });
   }
 
