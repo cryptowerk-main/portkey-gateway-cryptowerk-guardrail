@@ -32,12 +32,9 @@ interface GetSealResponseDocument {
   hasBeenInsertedIntoAtLeastOneBlockchain: boolean;
   blockchainRegistrations: BlockchainRegistration[];
   hasBeenInsertedIntoAllRequestedBlockchains: boolean;
-
 }
-interface Seal {
-}
-interface BlockchainRegistration {
-}
+interface Seal {}
+interface BlockchainRegistration {}
 
 export class APIAccess {
   apiKey: string;
@@ -104,9 +101,9 @@ export class APIAccess {
     );
   }
 
-  async getSeal(retrievalId:string):Promise<GetSealResponse> {
-    return this.apiRequest("getseal",{
-      "retrievalId": retrievalId
+  async getSeal(retrievalId: string): Promise<GetSealResponse> {
+    return this.apiRequest('getseal', {
+      retrievalId: retrievalId,
     }) as Promise<GetSealResponse>;
   }
 }
