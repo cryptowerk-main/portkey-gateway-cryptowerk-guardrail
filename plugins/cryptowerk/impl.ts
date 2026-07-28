@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { post } from '../utils';
 
 interface APIResponse {
   minSupportedAPIVersion: number;
@@ -40,40 +41,35 @@ export class APIAccess {
     callName: string,
     reqParams: object
   ): Promise<APIResponse> {
-    const postData: string = JSON.stringify(reqParams);
+    //const server="http://localhost:8080"; // for local debugging
+    const server = 'https://developers.cryptowerk.com';
     return new Promise((resolve, reject) => {
-      const apiUrl =
-        'https://developers.cryptowerk.com/platform/API/v8/' + callName;
-      fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'X-ApiKey': this.apiKey + ' ' + this.apiCredential,
-          'Content-Type': 'application/json', //"application/x-www-form-urlencoded"
-          'Content-Length': String(Buffer.byteLength(postData)),
+      const apiUrl = server + '/platform/API/v8/' + callName;
+      post(
+        apiUrl,
+        reqParams, // JSON.stringify() is done by post()
+        {
+          headers: {
+            'X-ApiKey': this.apiKey + ' ' + this.apiCredential,
+            // already set by post(): 'Content-Type': 'application/json', //"application/x-www-form-urlencoded"
+            // no suitable for post(): 'Content-Length': String(Buffer.byteLength(postData)),
+          },
         },
-        body: postData,
-      })
-        .then((response: Response) => {
-          let success: boolean = response.ok && response.status == 200;
-          response
-            .text() // .json()
-            .then((jsonText) => {
-              let json: APIResponse = JSON.parse(jsonText);
-              if (success) {
-                resolve(json);
-              } else {
-                let msg = 'status=' + response.status;
-                if (response.statusText) msg += ' ' + response.statusText;
-                if (json.error) msg += ", server says '" + json.error + "'";
-                reject(msg);
-              }
-            })
-            .catch((e) => {
-              reject('Cannot retrieve JSON response: ' + e.toString());
-            });
+        30000 // timeout
+      )
+        .then((json: APIResponse) => {
+          if (json.error) reject('Server responded with error: ' + json.error);
+          else resolve(json);
         })
         .catch((e) => {
-          reject(e.toString());
+          let msg = e.toString();
+          if (e.response) {
+            const response = e.response;
+            if (response.status) msg += ', status=' + response.status;
+            if (response.statusText) msg += ', ' + response.statusText;
+            if (response.body) msg += ", server says '" + response.body + "'";
+          }
+          reject(msg);
         });
     });
   }

@@ -72,12 +72,11 @@ describe('Cryptowerk Plugin', () => {
       manipulator(contextCopy);
       const response = handler(contextCopy, parameters, eventType);
       response.then((result) => {
-        //console.log(result);
-        //console.log(typeof result.error);
         expect(result.error).toBeInstanceOf(Error);
       });
       return response;
     }
+
     {
       const result = await wrongCred((context) => {
         context.credentials.apiCredential += 'wrong';
